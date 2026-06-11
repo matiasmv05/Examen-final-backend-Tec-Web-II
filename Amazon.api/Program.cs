@@ -15,6 +15,7 @@ using Microsoft.IdentityModel.Tokens;
 
 
 
+
 public class Program {
 
     public static void Main(string[] args)
@@ -173,9 +174,6 @@ public class Program {
         app.UseAuthorization();
 
         app.MapControllers();
-
-        var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-        app.Urls.Add($"http://0.0.0.0:{port}");
 
         app.Run();
 
