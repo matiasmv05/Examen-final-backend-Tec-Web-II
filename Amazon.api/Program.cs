@@ -13,14 +13,11 @@ using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-
-
-
-public class Program {
-
-    public static void Main(string[] args)
+public class Program
 {
-   var builder = WebApplication.CreateBuilder(args);
+    public static void Main(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
 
         builder.Configuration.Sources.Clear();
         builder.Configuration
@@ -31,24 +28,38 @@ public class Program {
         if (builder.Environment.IsDevelopment())
         {
             builder.Configuration.AddUserSecrets<Program>();
-
         }
-
 
         #region Configurar la BD MySql
         var connectionString = builder.Configuration.GetConnectionString("ConnectionMySql");
-        builder.Services.AddDbContext<AmazonContext>(options =>  options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+        builder.Services.AddDbContext<AmazonContext>(options =>
+            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
         #endregion
 
         if (builder.Environment.IsDevelopment())
-{
-           var connStr = builder.Configuration.GetConnectionString("ConnectionMySQL");
-           Console.WriteLine($"[DEBUG] MySQL: {connStr?.Split(';')[0]}"); 
-}
+        {
+            var connStr = builder.Configuration.GetConnectionString("ConnectionMySQL");
+            Console.WriteLine($"[DEBUG] MySQL: {connStr?.Split(';')[0]}");
+        }
 
+        // ─── CORS ────────────────────────────────────────────────────────────
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("FrontendPolicy", policy =>
+            {
+                policy
+                    .WithOrigins(
+                        "http://localhost:5173",   // Vite dev
+                        "http://localhost:3000",   // fallback dev
+                        builder.Configuration["Cors:AllowedOrigin"] ?? "" // producción vía variable de entorno
+                    )
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
+        // ─────────────────────────────────────────────────────────────────────
 
         builder.Services.AddAutoMapper(typeof(MappingProfile));
-
 
         builder.Services.AddTransient<IOrderService, OrderService>();
         builder.Services.AddTransient<IUserService, UserService>();
@@ -61,22 +72,21 @@ public class Program {
         builder.Services.AddScoped<IDapperContext, DapperContext>();
         builder.Services.AddSingleton<IPasswordService, PasswordService>();
 
-
         builder.Services.AddControllers(options =>
-{
-    options.Filters.Add<GlobalExceptionFilter>();
-    options.Filters.Add<ValidationFilter>();
-}).AddNewtonsoftJson(options =>
-{
-    options.SerializerSettings.ReferenceLoopHandling = 
-        Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-}).ConfigureApiBehaviorOptions(options =>
-{
-    options.SuppressModelStateInvalidFilter = true;
-});
+        {
+            options.Filters.Add<GlobalExceptionFilter>();
+            options.Filters.Add<ValidationFilter>();
+        }).AddNewtonsoftJson(options =>
+        {
+            options.SerializerSettings.ReferenceLoopHandling =
+                Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+        }).ConfigureApiBehaviorOptions(options =>
+        {
+            options.SuppressModelStateInvalidFilter = true;
+        });
 
-        builder.Services.Configure<PasswordOptions>
-            (builder.Configuration.GetSection("PasswordOptions"));
+        builder.Services.Configure<PasswordOptions>(
+            builder.Configuration.GetSection("PasswordOptions"));
 
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
@@ -95,40 +105,29 @@ public class Program {
 
             var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-
-        if (File.Exists(xmlPath))
-        {
-             options.IncludeXmlComments(xmlPath);
-        }
+            if (File.Exists(xmlPath))
+                options.IncludeXmlComments(xmlPath);
         });
 
-         builder.Services.AddApiVersioning(options =>
-            {
-                // Reporta las versiones soportadas y obsoletas en encabezados de respuesta
-                options.ReportApiVersions = true;
-
-                // Versi�n por defecto si no se especifica
-                options.AssumeDefaultVersionWhenUnspecified = true;
-                options.DefaultApiVersion = new ApiVersion(1, 0);
-
-                // Soporta versionado mediante URL, Header o QueryString
-                options.ApiVersionReader = ApiVersionReader.Combine(
-                    new UrlSegmentApiVersionReader(),       // Ejemplo: /api/v1/...
-                    new HeaderApiVersionReader("x-api-version"), // Ejemplo: Header ? x-api-version: 1.0
-                    new QueryStringApiVersionReader("api-version") // Ejemplo: ?api-version=1.0
-                );
-            });
+        builder.Services.AddApiVersioning(options =>
+        {
+            options.ReportApiVersions = true;
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.ApiVersionReader = ApiVersionReader.Combine(
+                new UrlSegmentApiVersionReader(),
+                new HeaderApiVersionReader("x-api-version"),
+                new QueryStringApiVersionReader("api-version")
+            );
+        });
 
         builder.Services.AddAuthentication(options =>
         {
-            options.DefaultAuthenticateScheme =
-                JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme =
-                JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         }).AddJwtBearer(options =>
         {
-            options.TokenValidationParameters =
-            new TokenValidationParameters
+            options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
@@ -152,12 +151,10 @@ public class Program {
         builder.Services.AddValidatorsFromAssemblyContaining<OrderItemDtoValidator>();
         builder.Services.AddValidatorsFromAssemblyContaining<PaymentDtoValidator>();
 
-
         builder.Services.AddScoped<IValidationService, ValidationService>();
         builder.Services.AddScoped<ISecurityServices, SecurityServices>();
 
         builder.Configuration.AddEnvironmentVariables();
-
 
         var app = builder.Build();
 
@@ -168,16 +165,14 @@ public class Program {
             options.RoutePrefix = string.Empty;
         });
 
-       // app.UseHttpsRedirection();
+        // app.UseHttpsRedirection();
 
+        app.UseCors("FrontendPolicy");   // ← ANTES de Authentication y Authorization
         app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllers();
 
         app.Run();
-
     }
 }
-
-
