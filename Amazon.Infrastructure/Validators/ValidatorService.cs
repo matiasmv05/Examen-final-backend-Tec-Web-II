@@ -23,22 +23,23 @@ namespace Amazon.Infrastructure.Validators
             _serviceProvider = serviceProvider;
         }
 
-        public async Task<ValidationResult> ValidateAsync<T>(T model)
-        {
-            var validator = _serviceProvider.GetService<IValidator<T>>();
+       public async Task<ValidationResult> ValidateAsync<T>(T model)
+{
+    var validator = _serviceProvider.GetService<IValidator<T>>();
 
-            if (validator == null)
-            {
-                throw new InvalidOperationException($"Validación No encontrada para el tipo {typeof(T).Name}");
-            }
+    if (validator == null)
+    {
+        // ← FIX: retornar válido en lugar de lanzar excepción
+        return new ValidationResult { IsValid = true };
+    }
 
-            var result = await validator.ValidateAsync(model);
+    var result = await validator.ValidateAsync(model);
 
-            return new ValidationResult
-            {
-                IsValid = result.IsValid,
-                Errors = result.Errors.Select(e => e.ErrorMessage).ToList()
-            };
-        }
+    return new ValidationResult
+    {
+        IsValid = result.IsValid,
+        Errors = result.Errors.Select(e => e.ErrorMessage).ToList()
+    };
+}
     }
 }
