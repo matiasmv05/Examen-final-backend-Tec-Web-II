@@ -33,7 +33,7 @@ public class Program
         #region Configurar la BD MySql
         var connectionString = builder.Configuration.GetConnectionString("ConnectionMySql");
         builder.Services.AddDbContext<AmazonContext>(options =>
-            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 0))));
         #endregion
 
         if (builder.Environment.IsDevelopment())
