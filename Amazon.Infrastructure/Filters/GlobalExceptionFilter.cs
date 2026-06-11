@@ -1,20 +1,23 @@
 ﻿using Amazon.Core.Exceptions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.Extensions.Hosting;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Amazon.Infrastructure.Filters
 {
     public class GlobalExceptionFilter : IExceptionFilter
     {
+        private readonly IWebHostEnvironment _env;
+
+        public GlobalExceptionFilter(IWebHostEnvironment env)
+        {
+            _env = env;
+        }
+
         public void OnException(ExceptionContext context)
         {
-            // Primero verificar el tipo, nunca asumir
             if (context.Exception is BussinesException businessEx)
             {
                 var json = new
@@ -23,9 +26,9 @@ namespace Amazon.Infrastructure.Filters
                     {
                         new
                         {
-                            Status = (int)businessEx.StatusCode,
-                            Title = businessEx.StatusCode.ToString(),
-                            Detail = businessEx.Message
+                            status = (int)businessEx.StatusCode,
+                            title  = businessEx.StatusCode.ToString(),
+                            detail = businessEx.Message
                         }
                     }
                 };
@@ -36,20 +39,23 @@ namespace Amazon.Infrastructure.Filters
                 };
 
                 context.ExceptionHandled = true;
-                return; // importante: salir después de manejar
+                return;
             }
 
-            // Cualquier otra excepción no esperada → 500
-            // NO expongas el mensaje real en producción
+            // En producción expone el mensaje real temporalmente para debug
+            var detail = _env.IsDevelopment()
+                ? $"{context.Exception.Message} | {context.Exception.InnerException?.Message} | {context.Exception.StackTrace}"
+                : $"{context.Exception.Message} | {context.Exception.InnerException?.Message}"; // ← temporal
+
             var serverError = new
             {
                 errors = new[]
                 {
                     new
                     {
-                        Status = 500,
-                        Title = "Internal Server Error",
-                        Detail = "Ocurrió un error inesperado en el servidor"
+                        status = 500,
+                        title  = "Internal Server Error",
+                        detail
                     }
                 }
             };
