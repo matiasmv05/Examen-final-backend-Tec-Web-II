@@ -96,6 +96,7 @@ namespace Amazon.api.Controllers
 {
     var user = await _securityServices.GetLoginByCredentials(userLogin);
 
+    // ¿Tienes esta línea? Si no, ese es el problema
     if (user == null)
         return (false, null!);
 
