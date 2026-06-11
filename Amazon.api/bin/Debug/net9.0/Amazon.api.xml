@@ -1,0 +1,644 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Amazon.api</name>
+    </assembly>
+    <members>
+        <member name="T:Amazon.Api.Controllers.OrdersController">
+            <summary>
+            Controlador para gestionar todas las operaciones relacionadas con órdenes y carritos de compra
+            </summary>
+            <remarks>
+            Este controlador permite:
+            - Gestionar órdenes completas
+            - Manejar carritos de compra
+            - Procesar pagos
+            - Generar reportes de ventas
+            </remarks>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetOrders(OrderQueryFilter)">
+            <summary>
+            Recupera todas las órdenes registradas en el sistema
+            </summary>
+            <remarks>
+            Ejemplo de solicitud:
+            GET /api/Orders
+            
+            Este endpoint devuelve una lista completa de todas las órdenes existentes en el sistema,
+            incluyendo órdenes completadas, pendientes y carritos activos.
+            Solo accesible para Administrator.
+            </remarks>
+            <returns>Lista paginada de órdenes con sus respectivos datos mapeados al DTO</returns>
+            <response code="200">Retorna todas las órdenes exitosamente</response>
+            <response code="403">No autorizado. Se requiere rol Administrator</response>
+            <response code="500">Error interno del servidor al procesar la solicitud</response>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetOrderId(System.Int32)">
+            <summary>
+            Obtiene una orden específica por su identificador único
+            </summary>
+            <remarks>
+            Ejemplo de solicitud:
+            GET /api/Orders/5
+            
+            Este endpoint recupera la información completa de una orden específica.
+            El Administrator puede ver cualquier orden.
+            Customer/Seller solo pueden ver sus propias órdenes.
+            </remarks>
+            <param name="id">Identificador único de la orden (mayor a 0)</param>
+            <returns>Información detallada de la orden encontrada</returns>
+            <response code="200">Orden encontrada exitosamente</response>
+            <response code="400">Error en la validación del ID de la orden</response>
+            <response code="403">No autorizado para ver esta orden</response>
+            <response code="404">No se encontró la orden con el ID especificado</response>
+            <response code="500">Error interno del servidor al procesar la solicitud</response>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.CreateSimpleOrder(Amazon.Infrastructure.DTOs.CreateOrderRequest)">
+            <summary>
+            Crea una nueva orden simple en el sistema
+            </summary>
+            <remarks>
+            Solo Customer y Seller pueden crear órdenes.
+            
+            Ejemplo de solicitud:
+            POST /api/Orders
+            
+            Ejemplo de body:
+            {
+              "userId": 1,
+              "items": [
+                {
+                  "productId": 5,
+                  "quantity": 2,
+                  "unitPrice": 29.99
+                }
+              ]
+            }
+            </remarks>
+            <param name="crearOrden">Objeto con la información completa de la orden a crear</param>
+            <returns>Orden creada con su identificador asignado</returns>
+            <response code="200">Orden creada exitosamente</response>
+            <response code="400">Error de validación en los datos de entrada</response>
+            <response code="403">No autorizado. Administrator no puede crear órdenes.</response>
+            <response code="500">Error interno del servidor al crear la orden</response>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.DeleteOrderDtoMapper(System.Int32)">
+            <summary>
+            Elimina una orden del sistema por su identificador
+            </summary>
+            <remarks>
+            El Administrator puede eliminar cualquier orden.
+            Customer/Seller solo pueden eliminar sus propias órdenes, y solo si están en estado "Cart".
+            </remarks>
+            <param name="id">Identificador único de la orden a eliminar</param>
+            <response code="204">Orden eliminada correctamente</response>
+            <response code="403">No autorizado para eliminar esta orden, o no se puede eliminar porque ya está pagada</response>
+            <response code="404">No se encontró la orden a eliminar</response>
+            <response code="500">Error interno del servidor al eliminar la orden</response>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetUserCartDtoMapper(System.Int32)">
+            <summary>
+            Obtiene el carrito de compras activo de un usuario específico
+            </summary>
+            <remarks>
+            Solo para uso del Administrator. Para usuarios, usar /api/Orders/my-cart.
+            </remarks>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetMyCart">
+            <summary>
+            Obtiene el carrito de compras activo del usuario autenticado
+            </summary>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.AddItemToMyCart(Amazon.Core.CustomEntities.OrderItemRequest)">
+            <summary>
+            Agrega un producto al carrito de compras del usuario autenticado
+            </summary>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.IntroduceItemCart(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Agrega un producto al carrito de compras del usuario
+            </summary>
+            <remarks>
+            Uso para el Administrator o legacy. Para usuarios, usar /api/Orders/my-cart/items.
+            </remarks>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.RemoveItemFromMyCart(System.Int32)">
+            <summary>
+            Elimina un producto específico del carrito de compras del usuario autenticado
+            </summary>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.EliminarItemCarrito(System.Int32,System.Int32)">
+            <summary>
+            Elimina un producto específico del carrito de compras del usuario
+            </summary>
+            <remarks>
+            Solo uso del Administrator.
+            </remarks>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.CheckoutMyCart">
+            <summary>
+            Procesa el pago del carrito de compras del usuario autenticado
+            </summary>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.ProcessPaymentAsync(System.Int32)">
+            <summary>
+            Procesa el pago del carrito de compras del usuario
+            </summary>
+            <remarks>
+            Solo para uso del Administrator.
+            </remarks>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetMyOrders">
+            <summary>
+            Obtiene el historial de órdenes completadas del usuario autenticado
+            </summary>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetUserOrders(System.Int32)">
+            <summary>
+            Obtiene el historial de órdenes de un usuario específico
+            </summary>
+            <remarks>
+            Solo uso del Administrator.
+            </remarks>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetMySales">
+            <summary>
+            Obtiene las ventas de productos del Seller autenticado
+            </summary>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetReporteMensualVentas">
+            <summary>
+            Obtiene el reporte mensual de ventas del sistema
+            </summary>
+            <remarks>
+            Solo accesible para Administrator.
+            </remarks>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetBoardStats">
+            <summary>
+            Obtiene estadísticas generales del tablero de control
+            </summary>
+            <remarks>
+            Solo accesible para Administrator.
+            </remarks>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetTopProductosVendidos">
+            <summary>
+            Obtiene la lista de productos más vendidos en el sistema
+            </summary>
+            <remarks>
+            Solo accesible para Administrator.
+            </remarks>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetLowStockProductResponse">
+            <summary>
+            Obtiene la lista de productos con stock bajo
+            </summary>
+            <remarks>
+            Solo accesible para Administrator.
+            </remarks>
+        </member>
+        <member name="M:Amazon.Api.Controllers.OrdersController.GetTopUsersBySpending">
+            <summary>
+            Obtiene la lista de usuarios con mayor gasto total
+            </summary>
+            <remarks>
+            Solo accesible para Administrator.
+            </remarks>
+        </member>
+        <member name="M:Amazon.api.Controllers.PaymentsController.GetPayments(Amazon.Core.QueryFilters.PaymentQueryFilter)">
+            <summary>
+            Obtiene una lista paginada de pagos con filtros opcionales
+            </summary>
+            <remarks>
+            Solo accesible para Administrator.
+            
+            Ejemplo de uso:
+            GET /api/Payments?PageNumber=1&amp;PageSize=10
+            </remarks>
+            <param name="paymentQueryFilter">Filtros de búsqueda y paginación para pagos</param>
+            <returns>Lista paginada de pagos que coinciden con los criterios</returns>
+            <response code="200">Retorna la lista de pagos exitosamente</response>
+            <response code="400">Error en la validación de los parámetros de filtrado</response>
+            <response code="401">No autenticado. Token JWT requerido</response>
+            <response code="403">No autorizado. Se requiere rol Administrator</response>
+            <response code="500">Error interno del servidor al procesar la solicitud</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.PaymentsController.GetPaymentById(System.Int32)">
+            <summary>
+            Obtiene un pago específico por su identificador único
+            </summary>
+            <remarks>
+            El Administrator puede ver cualquier pago.
+            Customer/Seller solo pueden ver pagos de órdenes que les pertenecen.
+            
+            Ejemplo de uso:
+            GET /api/Payments/1
+            </remarks>
+            <param name="id">Identificador único del pago (mayor a 0)</param>
+            <returns>Información detallada del pago solicitado</returns>
+            <response code="200">Retorna el pago encontrado exitosamente</response>
+            <response code="400">Error en la validación del ID del pago</response>
+            <response code="403">No autorizado para ver este pago</response>
+            <response code="404">No se encontró el pago con el ID especificado</response>
+            <response code="500">Error interno del servidor al procesar la solicitud</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.PaymentsController.GetPaymentByOrderId(System.Int32)">
+            <summary>
+            Obtiene el pago asociado a una orden específica
+            </summary>
+            <remarks>
+            El Administrator puede ver cualquier pago.
+            Customer/Seller solo pueden ver pagos de órdenes que les pertenecen.
+            
+            Ejemplo de uso:
+            GET /api/Payments/order/5
+            </remarks>
+            <param name="orderId">Identificador único de la orden (mayor a 0)</param>
+            <returns>Información del pago asociado a la orden</returns>
+            <response code="200">Retorna el pago asociado a la orden exitosamente</response>
+            <response code="400">Error en la validación del ID de la orden</response>
+            <response code="403">No autorizado para ver este pago</response>
+            <response code="404">No se encontró pago para la orden especificada</response>
+            <response code="500">Error interno del servidor al procesar la solicitud</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.PaymentsController.GetMyPayments">
+            <summary>
+            Obtiene todos los pagos del usuario autenticado
+            </summary>
+        </member>
+        <member name="M:Amazon.api.Controllers.ProductsController.GetProducts(Amazon.Core.QueryFilters.ProductQueryFilter)">
+            <summary>
+            Obtiene una lista paginada de productos con filtros opcionales
+            </summary>
+            <remarks>
+            Este endpoint recupera una lista de productos con soporte para paginación y filtrado.
+            Los resultados incluyen información básica como nombre, precio, categoría y stock.
+            Accesible para todos los roles autenticados.
+            
+            Ejemplo de uso:
+            GET /api/Products?PageNumber=1&amp;PageSize=10
+            </remarks>
+            <param name="productQueryFilter">Filtros de búsqueda y paginación para productos</param>
+            <returns>Lista paginada de productos que coinciden con los criterios</returns>
+            <response code="200">Retorna la lista de productos exitosamente</response>
+            <response code="400">Error en la validación de los parámetros de filtrado</response>
+            <response code="401">No autenticado. Token JWT requerido</response>
+            <response code="500">Error interno del servidor al procesar la solicitud</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.ProductsController.GetbyId(System.Int32)">
+            <summary>
+            Obtiene un producto específico por su identificador único
+            </summary>
+            <remarks>
+            Este endpoint recupera la información completa de un producto utilizando su ID único.
+            Incluye detalles como descripción, precio, stock, categoría e información del vendedor.
+            Accesible para todos los roles autenticados.
+            
+            Ejemplo de uso:
+            GET /api/Products/5
+            </remarks>
+            <param name="id">Identificador único del producto (mayor a 0)</param>
+            <returns>Información detallada del producto solicitado</returns>
+            <response code="200">Retorna el producto encontrado exitosamente</response>
+            <response code="400">Error en la validación del ID del producto</response>
+            <response code="404">No se encontró el producto con el ID especificado</response>
+            <response code="500">Error interno del servidor al procesar la solicitud</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.ProductsController.InsertProduct(Amazon.infrastructure.DTOs.CreateProductDto,System.Nullable{System.Int32})">
+            <summary>
+            Crea un nuevo producto en el sistema
+            </summary>
+            <remarks>
+            Solo accesible para Administrator y Seller.
+            El SellerId se asigna automáticamente desde el token JWT.
+            El Administrator puede opcionalmente especificar un SellerId diferente mediante query parameter.
+            
+            Ejemplo de body:
+            {
+              "name": "Laptop Gaming",
+              "description": "Laptop para gaming de alta performance",
+              "price": 1500.00,
+              "stock": 10,
+              "category": "Electrónicos"
+            }
+            </remarks>
+            <param name="createProductDto">Datos del producto a crear (sin Id ni SellerId)</param>
+            <param name="sellerId">Opcional. Solo para Administrator: asigna el producto a un vendedor específico</param>
+            <returns>Producto creado con su identificador asignado</returns>
+            <response code="200">Producto creado exitosamente</response>
+            <response code="400">Error en la validación de datos o vendedor no existe</response>
+            <response code="403">No autorizado. Se requiere rol Administrator o Seller</response>
+            <response code="500">Error interno del servidor al crear el producto</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.ProductsController.UpdateProduct(System.Int32,Amazon.infrastructure.DTOs.ProductDto)">
+            <summary>
+            Actualiza la información de un producto existente
+            </summary>
+            <remarks>
+            Solo accesible para Administrator y Seller.
+            El Seller solo puede actualizar sus propios productos.
+            El Administrator puede actualizar cualquier producto.
+            
+            Ejemplo de uso:
+            PUT /api/Products/5
+            </remarks>
+            <param name="id">Identificador único del producto a actualizar</param>
+            <param name="productDto">Nuevos datos del producto</param>
+            <returns>Producto actualizado con la nueva información</returns>
+            <response code="200">Producto actualizado exitosamente</response>
+            <response code="400">Error de validación o IDs no coinciden</response>
+            <response code="403">No autorizado. El Seller solo puede editar sus propios productos</response>
+            <response code="404">No se encontró el producto a actualizar</response>
+            <response code="500">Error interno del servidor al actualizar</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.ProductsController.DeleteProductDtoMapper(System.Int32)">
+            <summary>
+            Elimina un producto del sistema
+            </summary>
+            <remarks>
+            Solo accesible para Administrator y Seller.
+            El Seller solo puede eliminar sus propios productos.
+            El Administrator puede eliminar cualquier producto.
+            
+            Ejemplo de uso:
+            DELETE /api/Products/5
+            </remarks>
+            <param name="id">Identificador único del producto a eliminar</param>
+            <returns>Respuesta sin contenido (204) si la eliminación fue exitosa</returns>
+            <response code="204">Producto eliminado exitosamente</response>
+            <response code="403">No autorizado. El Seller solo puede eliminar sus propios productos</response>
+            <response code="404">No se encontró el producto a eliminar</response>
+            <response code="500">Error interno del servidor al eliminar</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.ProductsController.GetProductsByCategory(System.String)">
+            <summary>
+            Obtiene productos filtrados por categoría específica
+            </summary>
+            <remarks>
+            Accesible para todos los roles autenticados.
+            Útil para filtrar productos por tipo (Electrónicos, Ropa, Hogar, etc.).
+            
+            Ejemplo de uso:
+            GET /api/Products/category/Electrónicos
+            </remarks>
+            <param name="category">Nombre de la categoría a filtrar</param>
+            <returns>Lista de productos que pertenecen a la categoría especificada</returns>
+            <response code="200">Retorna los productos de la categoría exitosamente</response>
+            <response code="500">Error interno del servidor al procesar la solicitud</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.ProductsController.GetProductsBySeller(System.Int32)">
+            <summary>
+            Obtiene todos los productos de un vendedor específico
+            </summary>
+            <remarks>
+            Accesible para todos los roles autenticados.
+            Útil para ver todos los productos que un vendedor tiene registrados en el sistema.
+            
+            Ejemplo de uso:
+            GET /api/Products/seller/1
+            </remarks>
+            <param name="sellerId">Identificador único del vendedor</param>
+            <returns>Lista de productos asociados al vendedor especificado</returns>
+            <response code="200">Retorna los productos del vendedor exitosamente</response>
+            <response code="400">Error en la validación del ID del vendedor</response>
+            <response code="500">Error interno del servidor al procesar la solicitud</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.ProductsController.UpdateStock(System.Int32,System.Int32)">
+            <summary>
+            Actualiza el stock de un producto específico
+            </summary>
+            <remarks>
+            Solo accesible para Administrator y Seller.
+            El Seller solo puede actualizar el stock de sus propios productos.
+            El Administrator puede actualizar el stock de cualquier producto.
+            
+            Ejemplo de uso:
+            PATCH /api/Products/5/stock/25
+            </remarks>
+            <param name="id">Identificador único del producto</param>
+            <param name="quantity">Nueva cantidad en stock (debe ser mayor a 0)</param>
+            <returns>Producto con el stock actualizado</returns>
+            <response code="200">Stock actualizado exitosamente</response>
+            <response code="400">Error de validación o cantidad inválida</response>
+            <response code="403">No autorizado. El Seller solo puede actualizar stock de sus propios productos</response>
+            <response code="404">No se encontró el producto</response>
+            <response code="500">Error interno del servidor al actualizar</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.ProductsController.GetMyProducts">
+            <summary>
+            Obtiene los productos del vendedor autenticado
+            </summary>
+            <remarks>
+            Solo accesible para Sellers. Extrae el SellerId del token JWT automáticamente.
+            
+            Ejemplo de uso:
+            GET /api/Products/my-products
+            </remarks>
+            <returns>Lista de productos del vendedor autenticado</returns>
+            <response code="200">Retorna los productos del vendedor exitosamente</response>
+            <response code="401">No autenticado o token inválido</response>
+            <response code="403">No autorizado. Se requiere rol Seller</response>
+            <response code="500">Error interno del servidor al procesar la solicitud</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.ProductsController.Test">
+            <summary>
+            Endpoint de prueba para verificar el funcionamiento del controlador
+            </summary>
+            <remarks>
+            Este endpoint permite verificar que el controlador de productos esté funcionando correctamente.
+            No realiza operaciones sobre la base de datos, solo retorna un mensaje de confirmación.
+            
+            Ejemplo de uso:
+            GET /api/Products/test
+            </remarks>
+            <returns>Mensaje de confirmación del funcionamiento</returns>
+            <response code="200">API funcionando correctamente</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.SecurityController.Register(Amazon.Infrastructure.DTOs.SecurityDto)">
+            <summary>
+            Registra un nuevo usuario en el sistema
+            </summary>
+            <remarks>
+            Este endpoint permite registrar un nuevo usuario en el sistema Amazon.
+            La contraseña se hashea automáticamente antes de almacenarse.
+            
+            Notas de seguridad:
+            - El rol "Administrator" solo puede ser asignado si la petición la hace un Administrator autenticado.
+            - En el registro público, si no se especifica rol o se intenta usar "Administrator", se asigna "Customer".
+            
+            Ejemplo de body:
+            {
+                "email": "juan@example.com",
+                "password": "ContraseñaSegura123!",
+                "name": "Juan Pérez",
+                "role": 2 // 1: Seller, 2: Customer
+            }
+            </remarks>
+            <param name="securityDto">Datos del usuario a registrar</param>
+            <returns>Usuario registrado con su identificador asignado</returns>
+            <response code="200">Usuario registrado exitosamente</response>
+            <response code="400">Error en la validación de datos o usuario ya existe</response>
+            <response code="403">Intento de crear un administrador sin permisos</response>
+            <response code="500">Error interno del servidor al registrar el usuario</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.TokenController.Authentication(Amazon.Core.Entities.UserLogin)">
+            <summary>
+            Autentica un usuario y genera un token JWT
+            </summary>
+            <remarks>
+            Este endpoint valida las credenciales del usuario y genera un token JWT
+            que puede ser usado para autenticar solicitudes en endpoints protegidos.
+            El token expira en 60 minutos.
+            
+            Ejemplo de body:
+            {
+                "user": "usuario123",
+                "password": "Contraseña123"
+            }
+            
+            La respuesta incluye un objeto con la propiedad "token" que contiene el JWT.
+            Este token debe incluirse en el header Authorization de solicitudes protegidas:
+            Authorization: Bearer [token]
+            </remarks>
+            <param name="userLogin">Credenciales de autenticación (login y password)</param>
+            <returns>Token JWT para autenticación en endpoints protegidos</returns>
+            <response code="200">Autenticación exitosa, retorna token JWT</response>
+            <response code="400">Error en la validación de las credenciales</response>
+            <response code="401">Credenciales inválidas o usuario no encontrado</response>
+            <response code="500">Error interno del servidor al procesar la autenticación</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.TokenController.GetConfig">
+            <summary>
+            Obtiene información de configuración del servidor (solo desarrollo)
+            </summary>
+            <remarks>
+            Este endpoint retorna información sensible de configuración como cadenas de conexión
+            y configuraciones de autenticación. **DEBE ESTAR PROTEGIDO EN PRODUCCIÓN**.
+            
+            Útil para debugging en entornos de desarrollo.
+            
+            Ejemplo de uso:
+            GET /api/Token/Config
+            </remarks>
+            <returns>Información de configuración del servidor</returns>
+            <response code="200">Retorna la información de configuración</response>
+            <response code="500">Error interno del servidor al obtener la configuración</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.UsersController.GetUsers(Amazon.Core.QueryFilters.UserQueryFilter)">
+            <summary>
+            Obtiene una lista paginada de todos los usuarios
+            </summary>
+            <remarks>
+            Solo accesible para Administradores.
+            Ejemplo: GET /api/Users?PageNumber=1&amp;PageSize=10
+            </remarks>
+            <response code="200">Lista de usuarios recuperada exitosamente</response>
+            <response code="401">No autenticado</response>
+            <response code="403">No autorizado. Se requiere rol Administrator</response>
+            <response code="500">Error interno del servidor</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.UsersController.GetUserById(System.Int32)">
+            <summary>
+            Obtiene un usuario por su ID
+            </summary>
+            <remarks>
+            El Administrador puede ver cualquier usuario.
+            Un usuario autenticado solo puede ver su propio perfil.
+            </remarks>
+            <param name="id">ID del usuario</param>
+            <response code="200">Usuario encontrado exitosamente</response>
+            <response code="400">ID inválido</response>
+            <response code="401">No autenticado</response>
+            <response code="403">No autorizado para ver este usuario</response>
+            <response code="404">Usuario no encontrado</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.UsersController.UpdateUser(System.Int32,UpdateUserDto)">
+            <summary>
+            Actualiza la información de un usuario
+            </summary>
+            <remarks>
+            El Administrador puede actualizar cualquier usuario.
+            Un usuario autenticado solo puede actualizar su propio perfil.
+            </remarks>
+            <param name="id">ID del usuario a actualizar</param>
+            <param name="userDto">Nuevos datos del usuario</param>
+            <response code="200">Usuario actualizado exitosamente</response>
+            <response code="400">Error de validación</response>
+            <response code="401">No autenticado</response>
+            <response code="403">No autorizado para editar este usuario</response>
+            <response code="404">Usuario no encontrado</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.UsersController.UpdateUserAdmin(System.Int32,UpdateUserAdminDto)">
+            <summary>
+            Actualiza completamente un usuario (solo Administrator)
+            </summary>
+            <remarks>
+            Permite al Administrador modificar nombre, email, estado activo y rol de cualquier usuario.
+            </remarks>
+            <param name="id">ID del usuario a actualizar</param>
+            <param name="adminDto">Datos completos a actualizar</param>
+            <response code="200">Usuario actualizado exitosamente</response>
+            <response code="404">Usuario no encontrado</response>
+            <response code="403">No autorizado. Se requiere rol Administrator</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.UsersController.DeleteUser(System.Int32)">
+            <summary>
+            Elimina un usuario del sistema
+            </summary>
+            <remarks>
+            El Administrador puede eliminar cualquier usuario.
+            Un usuario autenticado solo puede eliminar su propia cuenta.
+            </remarks>
+            <param name="id">ID del usuario a eliminar</param>
+            <response code="204">Usuario eliminado exitosamente</response>
+            <response code="401">No autenticado</response>
+            <response code="403">No autorizado para eliminar este usuario</response>
+            <response code="404">Usuario no encontrado</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.UsersController.GetUserBalance(System.Int32)">
+            <summary>
+            Obtiene el saldo de billetera de un usuario
+            </summary>
+            <remarks>
+            El Administrador puede ver la billetera de cualquier usuario.
+            Un usuario autenticado solo puede ver su propia billetera.
+            </remarks>
+            <param name="id">ID del usuario</param>
+            <response code="200">Saldo recuperado exitosamente</response>
+            <response code="401">No autenticado</response>
+            <response code="403">No autorizado para ver esta billetera</response>
+            <response code="404">Usuario no encontrado</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.UsersController.Wallet(System.Int32,System.Decimal)">
+            <summary>
+            Recarga saldo en la billetera de un usuario
+            </summary>
+            <remarks>
+            El Administrador puede recargar la billetera de cualquier usuario.
+            Un usuario autenticado solo puede recargar su propia billetera.
+            </remarks>
+            <param name="id">ID del usuario</param>
+            <param name="amount">Monto a recargar</param>
+            <response code="200">Billetera recargada exitosamente</response>
+            <response code="401">No autenticado</response>
+            <response code="403">No autorizado para recargar esta billetera</response>
+            <response code="404">Usuario no encontrado</response>
+        </member>
+        <member name="M:Amazon.api.Controllers.UsersController.UpdateUserRole(System.Int32,UpdateRoleDto)">
+            <summary>
+            Cambia el rol de un usuario entre Customer y Seller
+            </summary>
+            <remarks>
+            Solo el Administrador puede cambiar roles.
+            Solo se permite cambiar entre Customer y Seller.
+            No se puede asignar ni quitar el rol Administrator.
+            </remarks>
+            <param name="id">ID del usuario</param>
+            <param name="roleDto">Nuevo rol a asignar</param>
+            <response code="200">Rol actualizado exitosamente</response>
+            <response code="400">Rol no permitido</response>
+            <response code="404">Usuario no encontrado</response>
+        </member>
+    </members>
+</doc>

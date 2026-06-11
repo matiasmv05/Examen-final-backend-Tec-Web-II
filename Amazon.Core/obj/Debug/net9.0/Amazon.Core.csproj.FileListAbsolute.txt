@@ -1,0 +1,13 @@
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\bin\Debug\net9.0\Amazon.Core.deps.json
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\bin\Debug\net9.0\Amazon.Core.dll
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\bin\Debug\net9.0\Amazon.Core.pdb
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\obj\Debug\net9.0\Amazon.Core.csproj.AssemblyReference.cache
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\obj\Debug\net9.0\Amazon.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\obj\Debug\net9.0\Amazon.Core.AssemblyInfoInputs.cache
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\obj\Debug\net9.0\Amazon.Core.AssemblyInfo.cs
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\obj\Debug\net9.0\Amazon.Core.csproj.CoreCompileInputs.cache
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\obj\Debug\net9.0\Amazon.Core.sourcelink.json
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\obj\Debug\net9.0\Amazon.Core.dll
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\obj\Debug\net9.0\refint\Amazon.Core.dll
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\obj\Debug\net9.0\Amazon.Core.pdb
+C:\Users\matia\Desktop\tecweb proyecto\Backend\Amazon.Core\obj\Debug\net9.0\ref\Amazon.Core.dll
