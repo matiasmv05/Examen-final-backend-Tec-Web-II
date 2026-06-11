@@ -167,12 +167,15 @@ public class Program {
             options.RoutePrefix = string.Empty;
         });
 
-        app.UseHttpsRedirection();
+       // app.UseHttpsRedirection();
 
         app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllers();
+
+        var port = Environment.GetEnvironmentVariable("PORT") ?? "5044";
+        app.Urls.Add($"http://0.0.0.0:{port}");
 
         app.Run();
 
