@@ -19,28 +19,44 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // ─── CONFIGURACIÓN (orden correcto) ──────────────────────────────────
+        // Las env vars deben cargarse ANTES de leer cualquier valor de config.
         builder.Configuration.Sources.Clear();
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json",
-                optional: true, reloadOnChange: true);
+                optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables(); // ← AQUÍ, no al final
 
         if (builder.Environment.IsDevelopment())
         {
             builder.Configuration.AddUserSecrets<Program>();
         }
+        // ─────────────────────────────────────────────────────────────────────
 
         #region Configurar la BD MySql
         var connectionString = builder.Configuration.GetConnectionString("ConnectionMySql");
-        builder.Services.AddDbContext<AmazonContext>(options =>
-    options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 0))));
-        #endregion
 
-        if (builder.Environment.IsDevelopment())
+        // Log para verificar que la connection string llega correctamente
+        Console.WriteLine($"[CONFIG] ConnectionString is null: {connectionString == null}");
+        if (connectionString != null)
         {
-            var connStr = builder.Configuration.GetConnectionString("ConnectionMySQL");
-            Console.WriteLine($"[DEBUG] MySQL: {connStr?.Split(';')[0]}");
+            // Loguea solo el host, nunca la password completa
+            Console.WriteLine($"[CONFIG] MySQL host: {connectionString.Split(';')[0]}");
         }
+
+        builder.Services.AddDbContext<AmazonContext>(options =>
+            options.UseMySql(
+                connectionString,
+                new MySqlServerVersion(new Version(8, 0, 0)),
+                mysqlOptions => mysqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorNumbersToAdd: null
+                )
+            )
+        );
+        #endregion
 
         // ─── CORS ────────────────────────────────────────────────────────────
         builder.Services.AddCors(options =>
@@ -49,9 +65,9 @@ public class Program
             {
                 policy
                     .WithOrigins(
-                        "http://localhost:5173",   // Vite dev
-                        "http://localhost:3000",   // fallback dev
-                        builder.Configuration["Cors:AllowedOrigin"] ?? "" // producción vía variable de entorno
+                        "http://localhost:5173",
+                        "http://localhost:3000",
+                        builder.Configuration["Cors:AllowedOrigin"] ?? ""
                     )
                     .AllowAnyHeader()
                     .AllowAnyMethod();
@@ -137,7 +153,7 @@ public class Program
                 ValidAudience = builder.Configuration["Authentication:Audience"],
                 IssuerSigningKey = new SymmetricSecurityKey(
                     System.Text.Encoding.UTF8.GetBytes(
-                        builder.Configuration["Authentication:SecretKey"]
+                        builder.Configuration["Authentication:SecretKey"]!
                     )
                 )
             };
@@ -154,8 +170,6 @@ public class Program
         builder.Services.AddScoped<IValidationService, ValidationService>();
         builder.Services.AddScoped<ISecurityServices, SecurityServices>();
 
-        builder.Configuration.AddEnvironmentVariables();
-
         var app = builder.Build();
 
         app.UseSwagger();
@@ -167,7 +181,7 @@ public class Program
 
         // app.UseHttpsRedirection();
 
-        app.UseCors("FrontendPolicy");   // ← ANTES de Authentication y Authorization
+        app.UseCors("FrontendPolicy");
         app.UseAuthentication();
         app.UseAuthorization();
 
