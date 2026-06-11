@@ -93,11 +93,15 @@ namespace Amazon.api.Controllers
 
 
         private async Task<(bool, Security)> IsValidUser(UserLogin userLogin)
-        {
-            var user = await _securityServices.GetLoginByCredentials(userLogin);
-            var isValidHash = _passwordService.Check(user.Password, userLogin.Password);
-            return (isValidHash, user);
-        }
+{
+    var user = await _securityServices.GetLoginByCredentials(userLogin);
+
+    if (user == null)
+        return (false, null!);
+
+    var isValidHash = _passwordService.Check(user.Password, userLogin.Password);
+    return (isValidHash, user);
+}
 
         private string GenerateToken(Security security)
 {
