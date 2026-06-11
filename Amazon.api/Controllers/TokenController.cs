@@ -58,38 +58,43 @@ namespace Amazon.api.Controllers
         [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
         [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
 
+      
         [HttpPost]
-        public async Task<IActionResult> Authentication([FromBody] UserLogin userLogin)
+public async Task<IActionResult> Authentication([FromBody] UserLogin userLogin)
+{
+    try
+    {
+        var validation = await IsValidUser(userLogin);
+        if (validation.Item1)
         {
-            try
+            var security = validation.Item2;
+            var token = GenerateToken(security);
+            
+            var response = new Amazon.Infrastructure.DTOs.LoginResponseDto 
             {
-                //Si es usuario valido
-                var validation = await IsValidUser(userLogin);
-                if (validation.Item1)
-                {
-                    var security = validation.Item2;
-                    var token = GenerateToken(security);
-                    
-                    var response = new Amazon.Infrastructure.DTOs.LoginResponseDto 
-                    {
-                        Token = token,
-                        UserId = security.UserId,
-                        Name = security.Name,
-                        Email = security.User?.Email ?? string.Empty,
-                        Role = security.Role,
-                        ExpiresAt = DateTime.UtcNow.AddMinutes(60)
-                    };
+                Token = token,
+                UserId = security.UserId,
+                Name = security.Name,
+                Email = security.User?.Email ?? string.Empty,
+                Role = security.Role,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(60)
+            };
 
-                    return Ok(response);
-                }
-
-                return NotFound("Credenciales no válidas");
-            }
-            catch (Exception err)
-            {
-                return StatusCode((int)HttpStatusCode.InternalServerError, err.Message);
-            }
+            return Ok(response);
         }
+
+        return NotFound("Credenciales no válidas");
+    }
+    catch (Exception err)
+    {
+        // Devuelve el error completo con stack trace
+        return StatusCode((int)HttpStatusCode.InternalServerError, new {
+            message = err.Message,
+            inner   = err.InnerException?.Message,
+            stack   = err.StackTrace
+        });
+    }
+}
 
 
         private async Task<(bool, Security)> IsValidUser(UserLogin userLogin)
