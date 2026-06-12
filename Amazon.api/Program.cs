@@ -46,16 +46,7 @@ public class Program
         }
 
         builder.Services.AddDbContext<AmazonContext>(options =>
-            options.UseMySql(
-                connectionString,
-                new MySqlServerVersion(new Version(8, 0, 0)),
-                mysqlOptions => mysqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 3,
-                    maxRetryDelay: TimeSpan.FromSeconds(5),
-                    errorNumbersToAdd: null
-                )
-            )
-        );
+            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
         #endregion
 
         // ─── CORS ────────────────────────────────────────────────────────────
