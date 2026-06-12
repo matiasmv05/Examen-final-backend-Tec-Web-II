@@ -10,6 +10,8 @@ namespace Amazon.Core.Interface
     public interface IUnitOfWork : IDisposable
     {
         IOrderRepository OrderRepository { get; }
+        Task ExecuteInTransactionAsync(Func<Task> operation);
+
         IOrderItemRepository OrderItemRepository { get; }
         IUserRepository UserRepository { get; }
         IProductRepository ProductRepository { get; }

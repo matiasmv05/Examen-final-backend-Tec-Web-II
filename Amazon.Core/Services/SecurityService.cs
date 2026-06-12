@@ -22,15 +22,14 @@ namespace Amazon.Core.Services
             return await _unitOfWork.SecurityRepository.GetLoginByCredentials(login);
         }
 
-        public async Task RegisterUser(Security security)
+       public async Task RegisterUser(Security security)
 {
-    await _unitOfWork.BeginTransaccionAsync();
-    try
+    await _unitOfWork.ExecuteInTransactionAsync(async () =>
     {
         var user = new User
         {
             Name = security.Name,
-            Email = security.Email, // viene del SecurityDto
+            Email = security.Email,
             IsActive = true,
             Billetera = 0
         };
@@ -39,14 +38,7 @@ namespace Amazon.Core.Services
 
         security.UserId = user.Id;
         await _unitOfWork.SecurityRepository.Add(security);
-
-        await _unitOfWork.CommitAsync();
-    }
-    catch
-    {
-        await _unitOfWork.RollbackAsync();
-        throw;
-    }
+    });
 }
 public async Task UpdateRoleAsync(int userId, RoleType role)
 {

@@ -34,6 +34,26 @@ namespace Amazon.Infrastructure.Repositories
         public IOrderRepository OrderRepository=>
             _orderRepository ?? new OrderRepository(_context, _dapper);
 
+        public async Task ExecuteInTransactionAsync(Func<Task> operation)
+{
+    var strategy = _context.Database.CreateExecutionStrategy();
+
+    await strategy.ExecuteAsync(async () =>
+    {
+        await BeginTransaccionAsync();
+        try
+        {
+            await operation();
+            await CommitAsync();
+        }
+        catch
+        {
+            await RollbackAsync();
+            throw;
+        }
+    });
+}
+
         public IUserRepository UserRepository =>
             _userRepository ?? new UserRepository(_context, _dapper);
         public IPaymentRepository PaymentRepository =>
