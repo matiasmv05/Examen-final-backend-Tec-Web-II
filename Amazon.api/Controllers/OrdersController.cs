@@ -368,19 +368,30 @@ namespace Amazon.Api.Controllers
         [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         [Authorize(Roles = $"{nameof(RoleType.Customer)},{nameof(RoleType.Seller)}")]
-       [HttpPost("my-cart/items")]
-public async Task<IActionResult> AddItemToMyCart([FromBody] OrderItemRequest request)
-{
-    var (isValid, tokenUserId, _) = GetTokenClaims();
-    if (!isValid)
-        return Unauthorized(new ApiResponse<string>("Token inválido"));
+        [HttpPost("my-cart/items")]
+        public async Task<IActionResult> AddItemToMyCart([FromBody] OrderItemRequest request)
+        {
+            try
+            {
+                var (isValid, tokenUserId, _) = GetTokenClaims();
+                if (!isValid)
+                    return Unauthorized(new ApiResponse<string>("Token inválido"));
 
-    // ← CAMBIO: crear carrito si no existe, en vez de retornar 400
-    var cart = await _orderService.GetUserCartAsync(tokenUserId);
-    var newItem = await _orderService.InsertProductIntoCart(request.ProductId, cart.Id, request.Quantity);
-    var newItemDto = _mapper.Map<OrderItemDto>(newItem);
-    return Ok(new ApiResponse<OrderItemDto>(newItemDto));
-}
+                var cart = await _orderService.GetUserCartAsync(tokenUserId);
+                if (cart == null)
+                    return BadRequest(new ApiResponse<string>("No tienes un carrito activo, debes crear uno primero"));
+
+                var newItem = await _orderService.InsertProductIntoCart(request.ProductId, cart.Id, request.Quantity);
+                var newItemDto = _mapper.Map<OrderItemDto>(newItem);
+                var response = new ApiResponse<OrderItemDto>(newItemDto);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError, new ApiResponse<string>(ex.Message));
+            }
+        }
+
 
         /// <summary>
         /// Agrega un producto al carrito de compras del usuario
