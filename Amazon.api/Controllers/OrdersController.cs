@@ -333,6 +333,39 @@ namespace Amazon.Api.Controllers
         /// <summary>
         /// Obtiene el carrito de compras activo del usuario autenticado
         /// </summary>
+        
+        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(ApiResponse<OrderResponseDto>))]
+[ProducesResponseType((int)HttpStatusCode.Unauthorized)]
+[ProducesResponseType((int)HttpStatusCode.NotFound)]
+[Authorize(Roles = $"{nameof(RoleType.Customer)},{nameof(RoleType.Seller)}")]
+[HttpGet("my-cart")]
+public async Task<IActionResult> GetMyCart()
+{
+    try
+    {
+        var (isValid, tokenUserId, _) = GetTokenClaims();
+        if (!isValid)
+            return Unauthorized(new ApiResponse<string>("Token inválido"));
+
+        var cart = await _orderService.GetUserCartAsync(tokenUserId);
+        if (cart == null)
+            return NotFound(new ApiResponse<string>("No tienes un carrito activo"));
+
+        var cartDto = _mapper.Map<OrderResponseDto>(cart);
+        return Ok(new ApiResponse<OrderResponseDto>(cartDto));
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new ApiResponse<string>($"Error: {ex.Message}"));
+    }
+}
+
+
+
+
+
+
+
         [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(ApiResponse<OrderResponseDto>))]
         [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
         [ProducesResponseType((int)HttpStatusCode.InternalServerError, Type = typeof(ApiResponse<string>))]
