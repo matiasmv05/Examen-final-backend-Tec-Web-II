@@ -141,7 +141,7 @@ namespace Amazon.Api.Controllers
         [ProducesResponseType((int)HttpStatusCode.Forbidden)]
         [ProducesResponseType((int)HttpStatusCode.NotFound)]
         [ProducesResponseType((int)HttpStatusCode.InternalServerError, Type = typeof(ApiResponse<string>))]
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetOrderId(int id)
         {
             try
@@ -256,7 +256,7 @@ namespace Amazon.Api.Controllers
         [ProducesResponseType((int)HttpStatusCode.Forbidden)]
         [ProducesResponseType((int)HttpStatusCode.NotFound)]
         [ProducesResponseType((int)HttpStatusCode.InternalServerError, Type = typeof(ApiResponse<string>))]
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteOrderDtoMapper(int id)
         {
             try
@@ -360,51 +360,6 @@ public async Task<IActionResult> GetMyCart()
     }
 }
 
-
-
-
-
-
-
-        [ProducesResponseType((int)HttpStatusCode.OK, Type = typeof(ApiResponse<OrderResponseDto>))]
-        [ProducesResponseType((int)HttpStatusCode.Unauthorized)]
-        [ProducesResponseType((int)HttpStatusCode.InternalServerError, Type = typeof(ApiResponse<string>))]
-        // OrdersController.cs
-[Authorize(Roles = $"{nameof(RoleType.Customer)},{nameof(RoleType.Seller)}")]
-[HttpPost("my-cart")]
-public async Task<IActionResult> CreateMyCart()
-{
-    try
-    {
-        var (isValid, tokenUserId, _) = GetTokenClaims();
-        if (!isValid)
-            return Unauthorized(new ApiResponse<string>("Token inválido"));
-
-        // Verificar si ya tiene carrito activo
-        var existing = await _orderService.GetUserCartAsync(tokenUserId);
-        if (existing != null)
-            return Ok(new ApiResponse<OrderResponseDto>(_mapper.Map<OrderResponseDto>(existing)));
-
-        // Crear carrito vacío
-        var order = new Order
-        {
-            UserId = tokenUserId,
-            Status = "Cart",
-            UpdatedAt = DateTime.UtcNow,
-            TotalAmount = 0,
-            OrderItems = new List<Order_Item>()
-        };
-
-        await _orderService.InsertAsync(order);
-
-        var created = await _orderService.GetByIdOrderAsync(order.Id);
-        return Ok(new ApiResponse<OrderResponseDto>(_mapper.Map<OrderResponseDto>(created)));
-    }
-    catch (Exception ex)
-         {
-        return StatusCode(500, new ApiResponse<string>($"Error: {ex.Message}"));
-        }
-     }
 
         /// <summary>
         /// Agrega un producto al carrito de compras del usuario autenticado
