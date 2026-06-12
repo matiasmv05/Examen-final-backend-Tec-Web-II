@@ -38,7 +38,7 @@ namespace Amazon.Infrastructure.Repositories
         {
             try
             {
-                var sql = OrderQueries.OrderQuerySqlServer;
+                var sql = OrderQueries.OrderQueryMySQL;
                 return await _dapper.QueryAsync<Order>(sql, new { Limit = limit });
             }
             catch (Exception err)
